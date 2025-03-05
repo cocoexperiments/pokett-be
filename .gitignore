@@ -41,4 +41,10 @@ tmp/
 temp/
 
 # DynamoDB local files
-.dynamodb/ 
+.dynamodb/
+
+# MongoDB data
+.mongodb/
+
+# OS
+Thumbs.db 
