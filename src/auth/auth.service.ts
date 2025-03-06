@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as stytch from 'stytch';
 
@@ -7,9 +7,16 @@ export class AuthService {
   private stytchClient: stytch.Client;
 
   constructor(private configService: ConfigService) {
+    const projectId = this.configService.get<string>('STYTCH_PROJECT_ID');
+    const secret = this.configService.get<string>('STYTCH_SECRET');
+
+    if (!projectId || !secret) {
+      throw new Error('Missing Stytch credentials in environment variables');
+    }
+
     this.stytchClient = new stytch.Client({
-      project_id: this.configService.get<string>('STYTCH_PROJECT_ID'),
-      secret: this.configService.get<string>('STYTCH_SECRET'),
+      project_id: projectId,
+      secret: secret,
       env: this.configService.get<string>('NODE_ENV') === 'production'
         ? stytch.envs.live
         : stytch.envs.test,
@@ -29,9 +36,14 @@ export class AuthService {
 
   async loginWithMagicLink(email: string): Promise<any> {
     try {
+      const redirectUrl = this.configService.get<string>('STYTCH_REDIRECT_URL');
+      if (!redirectUrl) {
+        throw new Error('Missing STYTCH_REDIRECT_URL in environment variables');
+      }
+
       const response = await this.stytchClient.magicLinks.email.loginOrCreate({
         email,
-        login_magic_link_url: this.configService.get<string>('STYTCH_REDIRECT_URL'),
+        login_magic_link_url: redirectUrl,
       });
       return response;
     } catch (error) {
