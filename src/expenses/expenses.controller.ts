@@ -1,10 +1,11 @@
 import { Controller, Get, Post, Body, Param, Query } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
 import { ExpensesService } from './expenses.service';
 import { CreateExpenseDto } from './dto/create-expense.dto';
 import { Expense } from './schemas/expense.schema';
 
 @ApiTags('expenses')
+@ApiBearerAuth('Bearer Token')
 @Controller('expenses')
 export class ExpensesController {
   constructor(private readonly expensesService: ExpensesService) {}
@@ -17,6 +18,7 @@ export class ExpensesController {
     type: Expense
   })
   @ApiResponse({ status: 400, description: 'Bad request.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
   async create(@Body() createExpenseDto: CreateExpenseDto): Promise<Expense> {
     return this.expensesService.create(createExpenseDto);
   }
@@ -33,6 +35,7 @@ export class ExpensesController {
     description: 'List of expenses.',
     type: [Expense]
   })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
   async findAll(@Query('groupId') groupId?: string): Promise<Expense[]> {
     return this.expensesService.findAll(groupId);
   }
@@ -45,6 +48,7 @@ export class ExpensesController {
     description: 'The expense has been successfully retrieved.',
     type: Expense
   })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
   @ApiResponse({ status: 404, description: 'Expense not found.' })
   async findOne(@Param('id') id: string): Promise<Expense> {
     return this.expensesService.findOne(id);

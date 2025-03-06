@@ -1,12 +1,14 @@
 import { Controller, Post, Body, Get, Query } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiQuery } from '@nestjs/swagger';
+import { Public } from './decorators/public.decorator';
 
 @ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  @Public()
   @ApiOperation({ summary: 'Login with magic link', description: 'Send a magic link to the provided email address' })
   @ApiBody({ 
     schema: {
@@ -28,6 +30,7 @@ export class AuthController {
     return this.authService.loginWithMagicLink(email);
   }
 
+  @Public()
   @ApiOperation({ summary: 'Authenticate magic link', description: 'Verify and authenticate the magic link token' })
   @ApiQuery({ 
     name: 'token',
