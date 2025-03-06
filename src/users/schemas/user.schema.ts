@@ -22,6 +22,14 @@ export class User extends Document {
   email?: string;
 
   @ApiProperty({
+    description: 'The Stytch user ID',
+    example: 'user-test-123456789',
+    required: false
+  })
+  @Prop({ unique: true, sparse: true })
+  stytchUserId?: string;
+
+  @ApiProperty({
     description: 'Map of balances with other users',
     example: { 'user123': 50.00, 'user456': -25.50 },
     type: 'object',

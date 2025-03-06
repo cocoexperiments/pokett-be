@@ -17,4 +17,13 @@ export class CreateUserDto {
   @IsOptional()
   @IsEmail()
   email?: string;
+
+  @ApiProperty({
+    description: 'The Stytch user ID',
+    example: 'user-test-123456789',
+    required: false
+  })
+  @IsOptional()
+  @IsString()
+  stytchUserId?: string;
 } 

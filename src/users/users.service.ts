@@ -23,6 +23,10 @@ export class UsersService {
     return user;
   }
 
+  async findByEmail(email: string): Promise<User | null> {
+    return this.userModel.findOne({ email }).exec();
+  }
+
   async updateBalance(userId: string, otherUserId: string, amount: number): Promise<void> {
     const user = await this.findOne(userId);
     const currentBalance = user.balances.get(otherUserId) || 0;
