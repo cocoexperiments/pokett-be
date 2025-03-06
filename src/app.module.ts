@@ -9,6 +9,7 @@ import { CategoriesModule } from './categories/categories.module';
 import { AuthModule } from './auth/auth.module';
 import { AuthMiddleware } from './auth/auth.middleware';
 import { StytchAuthGuard } from './auth/stytch.guard';
+import { BalancesModule } from './balances/balances.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { StytchAuthGuard } from './auth/stytch.guard';
     ExpensesModule,
     CategoriesModule,
     AuthModule,
+    BalancesModule,
   ],
   providers: [
     {

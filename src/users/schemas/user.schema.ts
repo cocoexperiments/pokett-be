@@ -28,15 +28,6 @@ export class User extends Document {
   })
   @Prop({ unique: true, sparse: true })
   stytchUserId?: string;
-
-  @ApiProperty({
-    description: 'Map of balances with other users',
-    example: { 'user123': 50.00, 'user456': -25.50 },
-    type: 'object',
-    additionalProperties: { type: 'number' }
-  })
-  @Prop({ type: Map, of: Number, default: {} })
-  balances: Map<string, number>;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User); 
