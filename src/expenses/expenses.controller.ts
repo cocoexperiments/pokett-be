@@ -1,5 +1,5 @@
-import { Controller, Get, Post, Body, Param } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
+import { Controller, Get, Post, Body, Param, Query } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { ExpensesService } from './expenses.service';
 import { CreateExpenseDto } from './dto/create-expense.dto';
 import { Expense } from './schemas/expense.schema';
@@ -19,6 +19,22 @@ export class ExpensesController {
   @ApiResponse({ status: 400, description: 'Bad request.' })
   async create(@Body() createExpenseDto: CreateExpenseDto): Promise<Expense> {
     return this.expensesService.create(createExpenseDto);
+  }
+
+  @Get()
+  @ApiOperation({ summary: 'Get all expenses, optionally filtered by group' })
+  @ApiQuery({ 
+    name: 'groupId', 
+    required: false, 
+    description: 'Filter expenses by group ID'
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'List of expenses.',
+    type: [Expense]
+  })
+  async findAll(@Query('groupId') groupId?: string): Promise<Expense[]> {
+    return this.expensesService.findAll(groupId);
   }
 
   @Get(':id')

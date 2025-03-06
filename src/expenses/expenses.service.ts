@@ -62,4 +62,15 @@ export class ExpensesService {
     }
     return expense;
   }
+
+  async findAll(groupId?: string): Promise<Expense[]> {
+    const query = groupId ? { groupId } : {};
+    
+    return this.expenseModel
+      .find(query)
+      .populate('paidBy')
+      .populate('categoryId')
+      .populate('groupId')
+      .sort({ createdAt: -1 });
+  }
 } 
