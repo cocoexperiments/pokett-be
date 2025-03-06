@@ -38,30 +38,14 @@ export class AuthService {
     }
   }
 
-  async loginWithMagicLink(email: string): Promise<any> {
+  async authenticate(token: string): Promise<any> {
     try {
-      const redirectUrl = this.configService.get<string>('STYTCH_REDIRECT_URL');
-      if (!redirectUrl) {
-        throw new Error('Missing STYTCH_REDIRECT_URL in environment variables');
-      }
-
-      const response = await this.stytchClient.magicLinks.email.loginOrCreate({
-        email,
-        login_magic_link_url: redirectUrl,
-      });
-      return response;
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  async authenticateMagicLink(token: string): Promise<any> {
-    try {
-      const response = await this.stytchClient.magicLinks.authenticate({
-        token,
+      const response = await this.stytchClient.oauth.authenticate({
+        token: token,
+        session_duration_minutes: 60 * 24 * 30, // 30 days session
       });
 
-      // After successful Stytch authentication, ensure user exists in our database
+      // After successful authentication, ensure user exists in our database
       const stytchUser = response.user;
       let user = await this.usersService.findByEmail(stytchUser.emails[0].email);
       
@@ -69,8 +53,8 @@ export class AuthService {
         // Create new user if they don't exist
         user = await this.usersService.create({
           email: stytchUser.emails[0].email,
-          name: stytchUser.name?.first_name || 'User', // Default name if not provided
-          stytchUserId: stytchUser.user_id // Store Stytch user ID for reference
+          name: stytchUser.name?.first_name || 'User',
+          stytchUserId: stytchUser.user_id
         });
       } else if (!user.stytchUserId) {
         // Update existing user with Stytch ID if not set

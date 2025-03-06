@@ -1,47 +1,65 @@
-import { Controller, Post, Body, Get, Query } from '@nestjs/common';
+import { Controller, Get, Query } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { Public } from './decorators/public.decorator';
 
-@ApiTags('Authentication')
+@ApiTags('authentication')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Public()
-  @ApiOperation({ summary: 'Login with magic link', description: 'Send a magic link to the provided email address' })
-  @ApiBody({ 
-    schema: {
-      type: 'object',
-      properties: {
-        email: {
-          type: 'string',
-          format: 'email',
-          example: 'user@example.com'
-        }
-      },
-      required: ['email']
-    }
+  @ApiOperation({ 
+    summary: 'Authenticate Stytch token', 
+    description: 'Authenticates tokens from the Stytch widget for both Magic Link and OAuth (Google) authentication methods. Returns a session token and user information upon successful authentication.'
   })
-  @ApiResponse({ status: 200, description: 'Magic link sent successfully' })
-  @ApiResponse({ status: 400, description: 'Invalid email format' })
-  @Post('login')
-  async login(@Body('email') email: string) {
-    return this.authService.loginWithMagicLink(email);
-  }
-
-  @Public()
-  @ApiOperation({ summary: 'Authenticate magic link', description: 'Verify and authenticate the magic link token' })
   @ApiQuery({ 
     name: 'token',
     type: 'string',
-    description: 'Magic link token received via email',
+    description: 'Authentication token received from Stytch widget (either from Magic Link or OAuth flow)',
     required: true
   })
-  @ApiResponse({ status: 200, description: 'Authentication successful' })
-  @ApiResponse({ status: 401, description: 'Invalid or expired token' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Authentication successful',
+    schema: {
+      type: 'object',
+      properties: {
+        session_token: {
+          type: 'string',
+          description: 'Token to be used for subsequent authenticated requests'
+        },
+        session: {
+          type: 'object',
+          description: 'Session information'
+        },
+        user: {
+          type: 'object',
+          properties: {
+            id: { type: 'string' },
+            email: { type: 'string' },
+            name: { type: 'string' },
+            stytchUserId: { type: 'string' }
+          },
+          description: 'User information from our database'
+        }
+      }
+    }
+  })
+  @ApiResponse({ 
+    status: 401, 
+    description: 'Invalid or expired token',
+    schema: {
+      type: 'object',
+      properties: {
+        statusCode: { type: 'number' },
+        message: { type: 'string' },
+        error: { type: 'string' }
+      }
+    }
+  })
   @Get('authenticate')
   async authenticate(@Query('token') token: string) {
-    return this.authService.authenticateMagicLink(token);
+    return this.authService.authenticate(token);
   }
 } 

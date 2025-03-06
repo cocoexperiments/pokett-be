@@ -12,15 +12,7 @@ async function bootstrap() {
 
   const config = new DocumentBuilder()
     .setTitle('Pokett API')
-    .setDescription(`The Pokett expense splitting application API documentation.
-    
-Authentication:
-- Most endpoints require authentication using a Bearer token
-- Get your token by:
-  1. Call POST /auth/login with your email to receive a magic link
-  2. Click the magic link or use the token in GET /auth/authenticate
-  3. Use the returned session_token as Bearer token in subsequent requests
-    `)
+    .setDescription(`The Pokett expense splitting application API documentation.`)
     .setVersion('1.0')
     .addBearerAuth(
       {
@@ -28,10 +20,10 @@ Authentication:
         scheme: 'bearer',
         bearerFormat: 'JWT',
         name: 'Authorization',
-        description: 'Enter your Bearer token',
+        description: 'Enter your Bearer token (session_token received from /auth/authenticate)',
         in: 'header',
       },
-      'Bearer Token', // This is the key used to reference this security scheme
+      'Bearer Token'
     )
     .build();
   

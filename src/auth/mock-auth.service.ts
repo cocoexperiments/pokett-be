@@ -17,38 +17,22 @@ export class MockAuthService implements IAuthService {
     };
   }
 
-  async loginWithMagicLink(email: string): Promise<any> {
-    // Generate a mock magic link token
-    const mockToken = `mock_magic_${Date.now()}_${email}`;
-    this.mockUsers.set(email, {
-      user_id: `mock_${email}`,
-      email: email,
-    });
-
-    console.log(`\n[Mock Auth] Magic Link Token for ${email}: ${mockToken}\n`);
-
-    return {
-      status_code: 200,
-      request_id: 'mock_request',
-      email_id: 'mock_email',
+  async authenticate(token: string): Promise<any> {
+    // For mock auth, create a fake user with the token as email
+    const mockEmail = `mock-user-${Date.now()}@example.com`;
+    const mockUser = {
+      user_id: `mock_${Date.now()}`,
+      email: mockEmail,
     };
-  }
 
-  async authenticateMagicLink(token: string): Promise<any> {
-    // Extract email from mock token
-    const email = token.split('_')[3];
-    if (!email || !this.mockUsers.has(email)) {
-      throw new Error('Invalid token');
-    }
-
-    // Generate session token
-    const sessionToken = `mock_session_${Date.now()}_${email}`;
-    this.mockTokens.set(sessionToken, email);
+    this.mockUsers.set(mockEmail, mockUser);
+    const sessionToken = `mock_session_${Date.now()}_${mockEmail}`;
+    this.mockTokens.set(sessionToken, mockEmail);
 
     return {
       status_code: 200,
       session_token: sessionToken,
-      user: this.mockUsers.get(email),
+      user: mockUser,
     };
   }
 } 
