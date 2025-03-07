@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Balance, BalanceDocument } from './schemas/balance.schema';
@@ -9,25 +9,33 @@ export class BalancesService {
     @InjectModel(Balance.name) private balanceModel: Model<BalanceDocument>,
   ) {}
 
-  private async findBalance(userId1: string, userId2: string): Promise<Balance | null> {
-    return this.balanceModel.findOne({
+  private async findBalance(userId1: string, userId2: string, groupId?: string): Promise<Balance | null> {
+    const query: Record<string, any> = {
       $or: [
         { creditorId: userId1, debtorId: userId2 },
         { creditorId: userId2, debtorId: userId1 }
       ]
-    });
+    };
+    
+    if (groupId) {
+      query.groupId = new Types.ObjectId(groupId);
+    } else {
+      query.groupId = { $exists: false };
+    }
+    
+    return this.balanceModel.findOne(query);
   }
 
-  async getBalance(userId: string, otherUserId: string): Promise<number> {
-    const balance = await this.findBalance(userId, otherUserId);
+  async getBalance(userId: string, otherUserId: string, groupId?: string): Promise<number> {
+    const balance = await this.findBalance(userId, otherUserId, groupId);
     if (!balance) {
       return 0;
     }
     return balance.creditorId.toString() === userId ? balance.amount : -balance.amount;
   }
 
-  async updateBalance(userId: string, otherUserId: string, amount: number): Promise<void> {
-    let balance = await this.findBalance(userId, otherUserId);
+  async updateBalance(userId: string, otherUserId: string, amount: number, groupId?: string): Promise<void> {
+    let balance = await this.findBalance(userId, otherUserId, groupId);
     
     if (!balance) {
       // Create new balance record with positive amount
@@ -38,7 +46,8 @@ export class BalancesService {
       balance = new this.balanceModel({
         creditorId: new Types.ObjectId(creditorId),
         debtorId: new Types.ObjectId(debtorId),
-        amount: Math.abs(amount)
+        amount: Math.abs(amount),
+        ...(groupId && { groupId: new Types.ObjectId(groupId) })
       });
     } else {
       // Update existing balance
@@ -60,10 +69,18 @@ export class BalancesService {
     await balance.save();
   }
 
-  async getUserBalances(userId: string): Promise<{ userId: string; amount: number }[]> {
-    const balances = await this.balanceModel.find({
+  async getUserBalances(userId: string, groupId?: string): Promise<{ userId: string; amount: number }[]> {
+    const query: Record<string, any> = {
       $or: [{ creditorId: userId }, { debtorId: userId }]
-    });
+    };
+
+    if (groupId) {
+      query.groupId = new Types.ObjectId(groupId);
+    } else {
+      query.groupId = { $exists: false };
+    }
+
+    const balances = await this.balanceModel.find(query);
 
     return balances.map(balance => {
       const isCreditor = balance.creditorId.toString() === userId;

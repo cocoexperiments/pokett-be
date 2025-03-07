@@ -3,14 +3,14 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Expense, ExpenseDocument } from './schemas/expense.schema';
 import { CreateExpenseDto, ShareDto } from './dto/create-expense.dto';
-import { UsersService } from '../users/users.service';
+import { BalancesService } from '../balances/balances.service';
 import { GroupsService } from '../groups/groups.service';
 
 @Injectable()
 export class ExpensesService {
   constructor(
     @InjectModel(Expense.name) private expenseModel: Model<ExpenseDocument>,
-    private readonly usersService: UsersService,
+    private readonly balancesService: BalancesService,
     private readonly groupsService: GroupsService,
   ) {}
 
@@ -31,10 +31,11 @@ export class ExpensesService {
     // Update user balances
     for (const share of createExpenseDto.shares) {
       if (share.userId !== createExpenseDto.paidBy) {
-        await this.usersService.updateBalance(
+        await this.balancesService.updateBalance(
           createExpenseDto.paidBy,
           share.userId,
           share.amount,
+          createExpenseDto.groupId
         );
       }
     }

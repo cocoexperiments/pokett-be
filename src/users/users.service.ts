@@ -34,13 +34,13 @@ export class UsersService {
     return this.userModel.findOne({ email }).exec();
   }
 
-  async updateBalance(userId: string, otherUserId: string, amount: number): Promise<void> {
-    await this.balancesService.updateBalance(userId, otherUserId, amount);
+  async updateBalance(userId: string, otherUserId: string, amount: number, groupId?: string): Promise<void> {
+    await this.balancesService.updateBalance(userId, otherUserId, amount, groupId);
   }
 
-  async getUserWithBalances(id: string): Promise<UserWithBalances> {
+  async getUserWithBalances(id: string, groupId?: string): Promise<UserWithBalances> {
     const user = await this.findOne(id);
-    const balances = await this.balancesService.getUserBalances(id);
+    const balances = await this.balancesService.getUserBalances(id, groupId);
     
     const balancesMap: { [key: string]: number } = {};
     balances.forEach(balance => {

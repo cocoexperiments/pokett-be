@@ -26,6 +26,14 @@ export class Balance extends Document {
   })
   @Prop({ required: true, default: 0 })
   amount: number;
+
+  @ApiProperty({
+    description: 'The ID of the group this balance belongs to (optional)',
+    example: '507f1f77bcf86cd799439013',
+    required: false
+  })
+  @Prop({ type: Types.ObjectId, ref: 'Group', required: false })
+  groupId?: Types.ObjectId;
 }
 
 export const BalanceSchema = SchemaFactory.createForClass(Balance); 
