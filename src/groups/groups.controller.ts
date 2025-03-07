@@ -1,8 +1,56 @@
 import { Controller, Get, Post, Body, Param } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBearerAuth, ApiProperty } from '@nestjs/swagger';
 import { GroupsService } from './groups.service';
 import { CreateGroupDto } from './dto/create-group.dto';
 import { Group } from './schemas/group.schema';
+
+class MemberToMemberBalanceResponse {
+  @ApiProperty({ description: 'ID of the user who owes money' })
+  fromUserId: string;
+
+  @ApiProperty({ description: 'ID of the user who is owed money' })
+  toUserId: string;
+
+  @ApiProperty({ description: 'Amount owed' })
+  amount: number;
+}
+
+class MemberBalanceResponse {
+  @ApiProperty({ description: 'ID of the member' })
+  userId: string;
+
+  @ApiProperty({ description: 'Name of the member' })
+  name: string;
+
+  @ApiProperty({ description: 'Email of the member' })
+  email: string;
+
+  @ApiProperty({ description: 'Total balance for the member (positive means they are owed money, negative means they owe money)' })
+  totalBalance: number;
+
+  @ApiProperty({
+    description: 'List of balances where this member owes money to others',
+    type: [MemberToMemberBalanceResponse]
+  })
+  owes: MemberToMemberBalanceResponse[];
+
+  @ApiProperty({
+    description: 'List of balances where others owe money to this member',
+    type: [MemberToMemberBalanceResponse]
+  })
+  isOwed: MemberToMemberBalanceResponse[];
+}
+
+class GroupStatsResponse {
+  @ApiProperty({ description: 'Total amount spent in the group' })
+  totalSpent: number;
+
+  @ApiProperty({
+    description: 'Detailed balance information for each member',
+    type: [MemberBalanceResponse]
+  })
+  memberBalances: MemberBalanceResponse[];
+}
 
 @ApiTags('groups')
 @ApiBearerAuth('Bearer Token')
@@ -35,5 +83,19 @@ export class GroupsController {
   @ApiResponse({ status: 404, description: 'Group not found.' })
   async findOne(@Param('id') id: string): Promise<Group> {
     return this.groupsService.findOne(id);
+  }
+
+  @Get(':id/stats')
+  @ApiOperation({ summary: 'Get group statistics including total spent and member balances' })
+  @ApiParam({ name: 'id', description: 'Group ID' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Group statistics retrieved successfully.',
+    type: GroupStatsResponse
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({ status: 404, description: 'Group not found.' })
+  async getGroupStats(@Param('id') id: string): Promise<GroupStatsResponse> {
+    return this.groupsService.getGroupStats(id);
   }
 } 
