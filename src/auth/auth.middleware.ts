@@ -2,9 +2,11 @@ import { Injectable, NestMiddleware, UnauthorizedException } from '@nestjs/commo
 import { Request, Response, NextFunction } from 'express';
 import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
+import { Logger } from '@nestjs/common';
 
 @Injectable()
 export class AuthMiddleware implements NestMiddleware {
+  private readonly logger = new Logger(AuthMiddleware.name);
   constructor(
     private readonly authService: AuthService,
     private readonly usersService: UsersService,
@@ -28,6 +30,7 @@ export class AuthMiddleware implements NestMiddleware {
       }
       next();
     } catch (error) {
+      this.logger.error(`Error validating token: ${error}`);
       throw new UnauthorizedException('Invalid token');
     }
   }
