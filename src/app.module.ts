@@ -10,6 +10,7 @@ import { AuthModule } from './auth/auth.module';
 import { AuthMiddleware } from './auth/auth.middleware';
 import { StytchAuthGuard } from './auth/stytch.guard';
 import { BalancesModule } from './balances/balances.module';
+import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { BalancesModule } from './balances/balances.module';
     CategoriesModule,
     AuthModule,
     BalancesModule,
+    HealthModule,
   ],
   providers: [
     {
