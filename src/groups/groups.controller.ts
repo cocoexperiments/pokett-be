@@ -1,8 +1,9 @@
-import { Controller, Get, Post, Body, Param } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Request } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBearerAuth, ApiProperty } from '@nestjs/swagger';
 import { GroupsService } from './groups.service';
 import { CreateGroupDto } from './dto/create-group.dto';
 import { Group } from './schemas/group.schema';
+import { RequestWithUser } from '../auth/interfaces/request-with-user.interface';
 
 class MemberToMemberBalanceResponse {
   @ApiProperty({ description: 'ID of the user who owes money' })
@@ -57,6 +58,18 @@ class GroupStatsResponse {
 @Controller('groups')
 export class GroupsController {
   constructor(private readonly groupsService: GroupsService) {}
+
+  @Get()
+  @ApiOperation({ summary: 'Get all groups where the authenticated user is a member' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'List of groups retrieved successfully.',
+    type: [Group]
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  async findUserGroups(@Request() req: RequestWithUser): Promise<Group[]> {
+    return this.groupsService.findUserGroups(req.user.id);
+  }
 
   @Post()
   @ApiOperation({ summary: 'Create a new group' })

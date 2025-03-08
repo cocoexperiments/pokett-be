@@ -122,4 +122,14 @@ export class GroupsService {
       memberBalances
     };
   }
+
+  async findUserGroups(userId: string): Promise<Group[]> {
+    const groups = await this.groupModel
+      .find({ members: new Types.ObjectId(userId) })
+      .populate('members', 'name email')
+      .populate('expenses')
+      .exec();
+    
+    return groups;
+  }
 } 
