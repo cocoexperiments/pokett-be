@@ -1,4 +1,4 @@
-import { Controller, Get, Request, Query } from "@nestjs/common";
+import { Controller, Get, Post, Request, Query, Body } from "@nestjs/common";
 import {
   ApiTags,
   ApiOperation,
@@ -8,6 +8,7 @@ import {
 } from "@nestjs/swagger";
 import { BalancesService } from "./balances.service";
 import { RequestWithUser } from "src/auth/interfaces/request-with-user.interface";
+import { SettleBalanceDto } from "./dto/settle-balance.dto";
 
 @ApiTags("balances")
 @ApiBearerAuth("Bearer Token")
@@ -60,5 +61,32 @@ export class BalancesController {
       req.authenticated_user._id.toString(),
       groupId
     );
+  }
+
+  @Post('settle')
+  @ApiOperation({
+    summary: 'Settle balances with another user',
+    description: 'Settles balances between the authenticated user and another user.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Balance settlement successful',
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async settleBalance(
+    @Request() req: RequestWithUser,
+    @Body() settleBalanceDto: SettleBalanceDto
+  ) {
+    if (!req.authenticated_user?._id) {
+      throw new Error('User not authenticated');
+    }
+    
+    await this.balancesService.settleBalance(
+      req.authenticated_user._id.toString(),
+      settleBalanceDto.userId,
+      settleBalanceDto.amount
+    );
+
+    return { message: 'Balance settled successfully' };
   }
 }

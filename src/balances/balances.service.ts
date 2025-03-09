@@ -93,4 +93,46 @@ export class BalancesService {
       };
     });
   }
+
+  async settleBalance(userId: string, otherUserId: string, amount: number): Promise<void> {
+    // Get all non-group balances between the users
+    const query: Record<string, any> = {
+      $or: [
+        { creditorId: otherUserId, debtorId: userId },
+        { creditorId: userId, debtorId: otherUserId }
+      ],
+      groupId: { $exists: false }
+    };
+
+    const balances = await this.balanceModel
+      .find(query)
+      .sort({ updatedAt: 1 });
+
+    // Calculate net balance
+    let netBalance = 0;
+    for (const balance of balances) {
+      if (balance.creditorId.toString() === otherUserId) {
+        // Other user is creditor, so current user owes them
+        netBalance -= balance.amount;
+      } else {
+        // Current user is creditor, so other user owes them
+        netBalance += balance.amount;
+      }
+    }
+
+    // Delete all existing balances as we'll create a new consolidated one
+    await this.balanceModel.deleteMany(query);
+
+    // Calculate the new balance after settlement
+    const newNetBalance = netBalance + amount;
+
+    // If there's a remaining balance, create a new record
+    if (newNetBalance !== 0) {
+      await this.balanceModel.create({
+        creditorId: new Types.ObjectId(newNetBalance > 0 ? userId : otherUserId),
+        debtorId: new Types.ObjectId(newNetBalance > 0 ? otherUserId : userId),
+        amount: Math.abs(newNetBalance)
+      });
+    }
+  }
 } 
