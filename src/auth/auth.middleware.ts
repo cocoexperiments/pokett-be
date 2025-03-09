@@ -21,12 +21,15 @@ export class AuthMiddleware implements NestMiddleware {
     }
 
     try {
-      const session = await this.authService.validateToken(token);
-      if (session) {
-        const user = await this.usersService.findByEmail(session.user.emails[0].email);
-        if (user) {
-          req['user'] = user;
-        }
+      const sessionResponse = await this.authService.validateToken(token);
+      if (!sessionResponse?.user) {
+        next();
+        return;
+      }
+
+      const user = await this.usersService.findByEmail(sessionResponse.user.emails[0].email);
+      if (user) {
+        (req as any).authenticated_user = user;
       }
       next();
     } catch (error) {

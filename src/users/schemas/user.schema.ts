@@ -28,6 +28,18 @@ export class User extends Document {
   })
   @Prop({ unique: true, sparse: true })
   stytchUserId?: string;
+
+  @ApiProperty({
+    description: 'The timestamp when the user was created',
+    example: '2025-03-09T05:08:25Z'
+  })
+  createdAt: Date;
+
+  @ApiProperty({
+    description: 'The timestamp when the user was last updated',
+    example: '2025-03-09T05:08:25Z'
+  })
+  updatedAt: Date;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User); 

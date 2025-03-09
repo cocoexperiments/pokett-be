@@ -32,10 +32,9 @@ export class AuthService {
   async validateToken(token: string): Promise<any> {
     try {
       const response = await this.stytchClient.sessions.authenticate({
-        session_token: token,
+        session_jwt: token,
       });
-
-      return response.session;
+      return response;
     } catch (error) {
       this.logger.error(`Error validating token: ${error}`);
       return null;

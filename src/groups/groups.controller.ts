@@ -68,7 +68,7 @@ export class GroupsController {
   })
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
   async findUserGroups(@Request() req: RequestWithUser): Promise<Group[]> {
-    return this.groupsService.findUserGroups(req.user.id);
+    return this.groupsService.findUserGroups(req.authenticated_user.id);
   }
 
   @Post()
