@@ -1,38 +1,46 @@
 import { Injectable } from '@nestjs/common';
 import { IAuthService } from './interfaces/auth.interface';
+import { UsersService } from '../users/users.service';
+import { faker } from '@faker-js/faker';
 
 @Injectable()
 export class MockAuthService implements IAuthService {
-  private mockUsers: Map<string, any> = new Map();
-  private mockTokens: Map<string, string> = new Map();
+  constructor(private readonly usersService: UsersService) {}
 
   async validateToken(token: string): Promise<any> {
-    const email = this.mockTokens.get(token);
-    if (!email) {
+    try {
+      const user = await this.usersService.findOne(token);
+      return {
+        user: {
+          emails: [{ email: user.email }],
+          name: {
+            first_name: user.name
+          }
+        }
+      };
+    } catch (error) {
       return null;
     }
-    return {
-      user_id: `mock_${email}`,
-      email: email,
-    };
   }
 
   async authenticate(token: string): Promise<any> {
-    // For mock auth, create a fake user with the token as email
-    const mockEmail = `mock-user-${Date.now()}@example.com`;
-    const mockUser = {
-      user_id: `mock_${Date.now()}`,
+    // Generate fake user data
+    const firstName = faker.person.firstName();
+    const lastName = faker.person.lastName();
+    const mockEmail = faker.internet.email({ firstName, lastName });
+    
+    // Create user in database
+    const user = await this.usersService.create({
+      name: `${firstName} ${lastName}`,
       email: mockEmail,
-    };
+    });
 
-    this.mockUsers.set(mockEmail, mockUser);
-    const sessionToken = `mock_session_${Date.now()}_${mockEmail}`;
-    this.mockTokens.set(sessionToken, mockEmail);
+    const userId = user._id.toString();
 
     return {
       status_code: 200,
-      session_token: sessionToken,
-      user: mockUser,
+      session_token: userId,
+      user,
     };
   }
 } 
