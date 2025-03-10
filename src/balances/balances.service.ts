@@ -26,14 +26,6 @@ export class BalancesService {
     return this.balanceModel.findOne(query);
   }
 
-  async getBalance(userId: string, otherUserId: string, groupId?: string): Promise<number> {
-    const balance = await this.findBalance(userId, otherUserId, groupId);
-    if (!balance) {
-      return 0;
-    }
-    return balance.creditorId.toString() === userId ? balance.amount : -balance.amount;
-  }
-
   async updateBalance(userId: string, otherUserId: string, amount: number, groupId?: string): Promise<void> {
     let balance = await this.findBalance(userId, otherUserId, groupId);
     
@@ -71,17 +63,15 @@ export class BalancesService {
 
   async getUserBalances(userId: string, groupId?: string): Promise<{ userId: string; amount: number }[]> {
     const query: Record<string, any> = {
-      $or: [{ creditorId: userId }, { debtorId: userId }]
+      $or: [{ creditorId: new Types.ObjectId(userId) }, { debtorId: new Types.ObjectId(userId) }]
     };
 
     if (groupId) {
       query.groupId = new Types.ObjectId(groupId);
-    } else {
-      query.groupId = { $exists: false };
     }
 
     const balances = await this.balanceModel.find(query);
-
+    console.log(balances, "---balances---")
     return balances.map(balance => {
       const isCreditor = balance.creditorId.toString() === userId;
       const otherUserId = isCreditor ? balance.debtorId.toString() : balance.creditorId.toString();
@@ -123,6 +113,7 @@ export class BalancesService {
     // Delete all existing balances as we'll create a new consolidated one
     await this.balanceModel.deleteMany(query);
 
+    console.log(netBalance, "---netBalance---")
     // Calculate the new balance after settlement
     const newNetBalance = netBalance + amount;
 

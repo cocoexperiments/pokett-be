@@ -20,7 +20,7 @@ import { UsersService } from '../users/users.service';
       provide: AuthService,
       useFactory: (configService: ConfigService, usersService: UsersService) => {
         const useMock = configService.get<string>('USE_MOCK_AUTH') === 'true';
-        return useMock ? new MockAuthService() : new AuthService(configService, usersService);
+        return useMock ? new MockAuthService(usersService) : new AuthService(configService, usersService);
       },
       inject: [ConfigService, UsersService],
     },

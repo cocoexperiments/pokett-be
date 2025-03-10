@@ -5,9 +5,11 @@ import { Expense, ExpenseDocument } from './schemas/expense.schema';
 import { CreateExpenseDto, ShareDto } from './dto/create-expense.dto';
 import { BalancesService } from '../balances/balances.service';
 import { GroupsService } from '../groups/groups.service';
+import { Logger } from '@nestjs/common';
 
 @Injectable()
 export class ExpensesService {
+  private readonly logger = new Logger(ExpensesService.name);
   constructor(
     @InjectModel(Expense.name) private expenseModel: Model<ExpenseDocument>,
     private readonly balancesService: BalancesService,
@@ -21,6 +23,7 @@ export class ExpensesService {
       sharesMap.set(share.userId, share.amount);
     });
 
+    this.logger.log("Creating expense", createExpenseDto);
     const createdExpense = new this.expenseModel({
       ...createExpenseDto,
       shares: sharesMap,
