@@ -54,4 +54,25 @@ export class UsersService {
       balances: balancesMap
     };
   }
+
+  async getFriendsWithBalances(userId: string, nameQuery?: string): Promise<UserWithBalances[]> {
+    const balances = await this.balancesService.getUserBalances(userId);
+    const friendIds = balances.map(balance => balance.userId);
+    let query = this.userModel.find({
+      _id: { $in: friendIds }
+    });
+
+    if (nameQuery) {
+      query = query.where({
+        name: { $regex: nameQuery, $options: 'i' }
+      });
+    }
+
+    const friends = await query.exec();
+
+    return friends.map(friend => ({
+      ...friend.toObject(),
+      _id: friend._id.toString(),
+    }));
+  }
 } 

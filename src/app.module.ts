@@ -19,7 +19,7 @@ import { BalancesModule } from './balances/balances.module';
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
-        uri: configService.get<string>('MONGODB_URI') || 'mongodb://localhost:27017/expense-split',
+        uri: configService.get<string>('MONGODB_URI') || 'mongodb://localhost:27017/pockett',
       }),
       inject: [ConfigService],
     }),

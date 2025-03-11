@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Balance, BalanceDocument } from './schemas/balance.schema';
@@ -12,8 +12,8 @@ export class BalancesService {
   private async findBalance(userId1: string, userId2: string, groupId?: string): Promise<Balance | null> {
     const query: Record<string, any> = {
       $or: [
-        { creditorId: userId1, debtorId: userId2 },
-        { creditorId: userId2, debtorId: userId1 }
+        { creditorId: new Types.ObjectId(userId1), debtorId: new Types.ObjectId(userId2) },
+        { creditorId: new Types.ObjectId(userId2), debtorId: new Types.ObjectId(userId1) }
       ]
     };
     
@@ -36,7 +36,7 @@ export class BalancesService {
 
   async updateBalance(userId: string, otherUserId: string, amount: number, groupId?: string): Promise<void> {
     let balance = await this.findBalance(userId, otherUserId, groupId);
-    
+
     if (!balance) {
       // Create new balance record with positive amount
       const [creditorId, debtorId] = amount >= 0 
@@ -71,19 +71,17 @@ export class BalancesService {
 
   async getUserBalances(userId: string, groupId?: string): Promise<{ userId: string; amount: number }[]> {
     const query: Record<string, any> = {
-      $or: [{ creditorId: userId }, { debtorId: userId }]
+      $or: [{ creditorId: new Types.ObjectId(userId) }, { debtorId: new Types.ObjectId(userId) }]
     };
 
     if (groupId) {
       query.groupId = new Types.ObjectId(groupId);
-    } else {
-      query.groupId = { $exists: false };
     }
 
     const balances = await this.balanceModel.find(query);
 
-    return balances.map(balance => {
-      const isCreditor = balance.creditorId.toString() === userId;
+    const userBalances = balances.map(balance => {
+      const isCreditor = balance.creditorId.toString() === userId.toString();
       const otherUserId = isCreditor ? balance.debtorId.toString() : balance.creditorId.toString();
       const amount = isCreditor ? balance.amount : -balance.amount;
       
@@ -92,6 +90,7 @@ export class BalancesService {
         amount
       };
     });
+    return userBalances;
   }
 
   async settleBalance(userId: string, otherUserId: string, amount: number): Promise<void> {
