@@ -4,6 +4,7 @@ import { GroupsService } from './groups.service';
 import { CreateGroupDto } from './dto/create-group.dto';
 import { Group } from './schemas/group.schema';
 import { RequestWithUser } from '../auth/interfaces/request-with-user.interface';
+import { Logger } from '@nestjs/common';
 
 class MemberToMemberBalanceResponse {
   @ApiProperty({ description: 'ID of the user who owes money' })
@@ -57,6 +58,8 @@ class GroupStatsResponse {
 @ApiBearerAuth('Bearer Token')
 @Controller('groups')
 export class GroupsController {
+  private readonly logger = new Logger(GroupsController.name);
+  
   constructor(private readonly groupsService: GroupsService) {}
 
   @Get()
@@ -68,7 +71,20 @@ export class GroupsController {
   })
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
   async findUserGroups(@Request() req: RequestWithUser): Promise<Group[]> {
-    return this.groupsService.findUserGroups(req.authenticated_user.id);
+    this.logger.debug('Finding groups for user', { 
+      userId: req.authenticated_user.id,
+      userEmail: req.authenticated_user.email 
+    });
+    
+    const groups = await this.groupsService.findUserGroups(req.authenticated_user.id);
+    
+    this.logger.debug('Found groups for user', { 
+      userId: req.authenticated_user.id,
+      groupCount: groups.length,
+      groupIds: groups.map(g => g._id)
+    });
+    
+    return groups;
   }
 
   @Post()
@@ -81,7 +97,13 @@ export class GroupsController {
   @ApiResponse({ status: 400, description: 'Bad request.' })
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
   async create(@Body() createGroupDto: CreateGroupDto): Promise<Group> {
-    return this.groupsService.create(createGroupDto);
+    this.logger.debug('Creating new group', { groupName: createGroupDto.name });
+    const group = await this.groupsService.create(createGroupDto);
+    this.logger.debug('Group created successfully', { 
+      groupId: group._id,
+      memberCount: group.members.length 
+    });
+    return group;
   }
 
   @Get(':id')
@@ -95,7 +117,15 @@ export class GroupsController {
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
   @ApiResponse({ status: 404, description: 'Group not found.' })
   async findOne(@Param('id') id: string): Promise<Group> {
-    return this.groupsService.findOne(id);
+    this.logger.debug('Finding group by id', { groupId: id });
+    const group = await this.groupsService.findOne(id);
+    this.logger.debug('Found group', { 
+      groupId: id,
+      groupName: group.name,
+      memberCount: group.members.length,
+      expenseCount: group.expenses.length
+    });
+    return group;
   }
 
   @Get(':id/stats')
@@ -109,6 +139,13 @@ export class GroupsController {
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
   @ApiResponse({ status: 404, description: 'Group not found.' })
   async getGroupStats(@Param('id') id: string): Promise<GroupStatsResponse> {
-    return this.groupsService.getGroupStats(id);
+    this.logger.debug('Getting group stats', { groupId: id });
+    const stats = await this.groupsService.getGroupStats(id);
+    this.logger.debug('Retrieved group stats', { 
+      groupId: id,
+      totalSpent: stats.totalSpent,
+      memberCount: stats.memberBalances.length
+    });
+    return stats;
   }
 } 
