@@ -1,12 +1,13 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
+import { Model, Types, FlattenMaps } from 'mongoose';
 import { Group, GroupDocument } from './schemas/group.schema';
 import { CreateGroupDto } from './dto/create-group.dto';
 import { Expense } from '../expenses/schemas/expense.schema';
 import { User } from '../users/schemas/user.schema';
 import { BalancesService } from '../balances/balances.service';
 import { Logger } from '@nestjs/common';
+import { GroupResponseDto, MemberResponseDto } from './dto/group-response.dto';
 
 interface MemberToMemberBalance {
   fromUserId: string;
@@ -52,9 +53,9 @@ export class GroupsService {
     this.logger.debug('Finding group by id', { groupId: id });
     const group = await this.groupModel
       .findById(id)
-      .populate('members')
-      .populate('expenses');
-      
+      .populate("members")
+      .populate("expenses");
+
     if (!group) {
       this.logger.warn('Group not found', { groupId: id });
       throw new NotFoundException(`Group with ID ${id} not found`);
@@ -86,8 +87,8 @@ export class GroupsService {
     
     const group = await this.groupModel
       .findById(groupId)
-      .populate<{ expenses: Expense[] }>('expenses')
-      .populate<{ members: User[] }>('members', 'name email');
+      .populate<{ expenses: Expense[] }>("expenses")
+      .populate<{ members: User[] }>("members", "name email");
 
     if (!group) {
       this.logger.warn('Group not found while getting stats', { groupId });
@@ -101,7 +102,7 @@ export class GroupsService {
     });
 
     // Calculate total spent
-    const totalSpent = group.expenses.reduce((sum, expense) => sum + expense.amount, 0);
+    const totalSpent = this.getGroupTotalSpend(group);
 
     this.logger.debug('Calculating member balances', { 
       groupId,
@@ -136,13 +137,13 @@ export class GroupsService {
             owes.push({
               fromUserId: userId,
               toUserId: otherUserId,
-              amount: Math.abs(amount)
+              amount: Math.abs(amount),
             });
           } else if (amount > 0) {
             isOwed.push({
               fromUserId: otherUserId,
               toUserId: userId,
-              amount
+              amount,
             });
           }
           totalBalance += amount;
@@ -162,7 +163,7 @@ export class GroupsService {
           email: member.email,
           totalBalance,
           owes,
-          isOwed
+          isOwed,
         };
       })
     );
@@ -175,25 +176,39 @@ export class GroupsService {
 
     return {
       totalSpent,
-      memberBalances
+      memberBalances,
     };
   }
 
-  async findUserGroups(userId: string): Promise<Group[]> {
+  private getGroupTotalSpend(group: Omit<Omit<import("mongoose").Document<unknown, {}, GroupDocument> & Group & import("mongoose").Document<any, any, any> & { _id: Types.ObjectId; }, "expenses"> & { expenses: Expense[]; }, "members"> & { members: User[]; }) {
+    return group.expenses.reduce(
+      (sum, expense) => sum + expense.amount,
+      0
+    );
+  }
+
+  async findUserGroups(userId: string): Promise<(FlattenMaps<Omit<GroupDocument, 'members' | 'expenses'>> & { 
+    members: FlattenMaps<User>[], 
+    expenses: FlattenMaps<Expense>[] 
+  })[]> {
     this.logger.debug('Finding groups for user', { userId });
     
     const groups = await this.groupModel
       .find({ members: new Types.ObjectId(userId) })
-      .populate('members', 'name email')
-      .populate('expenses')
+      .populate<{ members: User[] }>({
+        path: 'members',
+        model: 'User',
+        select: 'name email'
+      })
+      .populate<{ expenses: Expense[] }>({
+        path: 'expenses',
+        model: 'Expense'
+      })
+      .lean()
       .exec();
     
-    this.logger.debug('Found groups for user', {
-      userId,
-      groupCount: groups.length,
-      groupIds: groups.map(g => g._id)
-    });
+    this.logger.debug('Found groups for user', { groups });
     
     return groups;
   }
-} 
+}

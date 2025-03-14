@@ -5,6 +5,7 @@ import { CreateGroupDto } from './dto/create-group.dto';
 import { Group } from './schemas/group.schema';
 import { RequestWithUser } from '../auth/interfaces/request-with-user.interface';
 import { Logger } from '@nestjs/common';
+import { GroupResponseDto } from './dto/group-response.dto';
 
 class MemberToMemberBalanceResponse {
   @ApiProperty({ description: 'ID of the user who owes money' })
@@ -67,10 +68,10 @@ export class GroupsController {
   @ApiResponse({ 
     status: 200, 
     description: 'List of groups retrieved successfully.',
-    type: [Group]
+    type: [GroupResponseDto]
   })
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
-  async findUserGroups(@Request() req: RequestWithUser): Promise<Group[]> {
+  async findUserGroups(@Request() req: RequestWithUser): Promise<GroupResponseDto[]> {
     this.logger.debug('Finding groups for user', { 
       userId: req.authenticated_user.id,
       userEmail: req.authenticated_user.email 
@@ -78,13 +79,16 @@ export class GroupsController {
     
     const groups = await this.groupsService.findUserGroups(req.authenticated_user.id);
     
-    this.logger.debug('Found groups for user', { 
-      userId: req.authenticated_user.id,
-      groupCount: groups.length,
-      groupIds: groups.map(g => g._id)
-    });
-    
-    return groups;
+    return groups.map(group => ({
+      _id: group._id.toString(),
+      name: group.name,
+      members: group.members.map(member => ({
+        _id: member._id.toString(),
+        name: member.name,
+        email: member.email
+      })),
+      totalSpent: group.expenses.reduce((sum, expense) => sum + expense.amount, 0)
+    }));
   }
 
   @Post()
